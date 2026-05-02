@@ -568,6 +568,7 @@ html, body {
   font-family: inherit;
   font-size: 13px;
   transition: border-color 0.12s;
+  color-scheme: dark;
 }
 
 .input:focus, .select:focus, .textarea:focus {
@@ -998,6 +999,110 @@ html, body {
 }
 
 .tx-merchant-name { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ============= QUICK CATEGORY PICKER ============= */
+.cat-pill-clickable {
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.12s;
+  position: relative;
+}
+
+.cat-pill-clickable:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-elevated);
+}
+
+.cat-popover {
+  position: fixed;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  padding: 6px;
+  z-index: 200;
+  min-width: 220px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.cat-popover-header {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-dim);
+  font-weight: 600;
+  padding: 8px 10px 4px;
+}
+
+.cat-popover-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.cat-popover-item:hover {
+  background: var(--bg-elevated);
+}
+
+.cat-popover-item.active {
+  background: var(--accent-bg);
+}
+
+.cat-popover-item .pill-dot {
+  flex-shrink: 0;
+}
+
+.cat-popover-item-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cat-popover-divider {
+  height: 1px;
+  background: var(--border-soft);
+  margin: 4px 0;
+}
+
+.cat-popover-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 6px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.cat-popover-sub:hover {
+  background: var(--bg-elevated);
+  color: var(--text);
+}
+
+.cat-popover-sub.active { background: var(--accent-bg); color: var(--text); }
+
+.cat-popover-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-soft);
+  margin-bottom: 4px;
+}
+
+.cat-popover-back:hover { background: var(--bg-elevated); color: var(--text); }
+.cat-popover-back svg { width: 12px; height: 12px; stroke-width: 2; }
 
 /* ============= UTIL ============= */
 .flex { display: flex; }
@@ -1744,7 +1849,22 @@ html, body {
       <div class="page-header">
         <div>
           <h1 class="page-title">Categorias</h1>
-          <div class="page-subtitle">Análise detalhada por categoria de gastos</div>
+          <div class="page-subtitle" id="catPageSubtitle">Análise detalhada por categoria de gastos</div>
+        </div>
+        <div class="page-actions">
+          <select class="select" id="catPeriodFilter">
+            <option value="all">Todo o período</option>
+            <option value="current" selected>Mês atual</option>
+            <option value="previous">Mês anterior</option>
+            <option value="month">Mês específico...</option>
+            <option value="custom">Período personalizado...</option>
+          </select>
+          <select class="select" id="catMonthFilter" style="display:none;"></select>
+          <div class="date-range" id="catDateRange" style="display:none;">
+            <input type="date" class="input" id="catDateFrom">
+            <span class="date-range-sep">→</span>
+            <input type="date" class="input" id="catDateTo">
+          </div>
         </div>
       </div>
 
@@ -2038,22 +2158,33 @@ html, body {
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Valor da parcela (R$)</label>
+          <label class="form-label">Valor (R$)</label>
           <input type="number" step="0.01" class="input" id="txAmount" placeholder="0,00">
         </div>
         <div class="form-group">
           <label class="form-label">Mês de referência</label>
-          <input type="month" class="input" id="txInvoiceMonth">
+          <select class="select" id="txInvoiceMonth"></select>
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Parcela atual</label>
-          <input type="number" min="1" class="input" id="txInstallment" placeholder="1" value="1">
+          <label class="form-label">Parcelado?</label>
+          <select class="select" id="txIsInstallment">
+            <option value="no">Não — à vista</option>
+            <option value="yes">Sim — parcelado</option>
+          </select>
         </div>
-        <div class="form-group">
-          <label class="form-label">Total de parcelas</label>
-          <input type="number" min="1" class="input" id="txTotalInstallments" placeholder="1" value="1">
+        <div class="form-group" id="txInstallmentFields" style="display:none;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div>
+              <label class="form-label">Parcela atual</label>
+              <input type="number" min="1" class="input" id="txInstallment" placeholder="1" value="1">
+            </div>
+            <div>
+              <label class="form-label">Total</label>
+              <input type="number" min="2" class="input" id="txTotalInstallments" placeholder="10" value="2">
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -2237,10 +2368,21 @@ let pendingSave = false;       // marca se há mudança não salva ainda
 const PBKDF2_ITERATIONS = 250000;
 
 function bufToB64(buf) {
-  return btoa(String.fromCharCode(...new Uint8Array(buf)));
+  // Não pode usar String.fromCharCode(...arr) pois estoura a stack com arrays grandes.
+  // Convertemos em chunks de 8KB.
+  const bytes = new Uint8Array(buf);
+  const CHUNK = 0x8000;
+  let result = '';
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    result += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(result);
 }
 function b64ToBuf(b64) {
-  return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
 }
 
 async function deriveKey(password, saltBytes) {
@@ -2520,9 +2662,25 @@ async function syncToCloud(immediate) {
   } catch (err) {
     console.error('Sync error:', err);
     pendingSave = true;
-    updateSyncStatus('error');
-    // Tenta de novo em 5s
-    setTimeout(() => { if (pendingSave) syncToCloud(true); }, 5000);
+    // Mostra mensagem de erro mais clara no status
+    const code = err?.code || '';
+    const msg = err?.message || 'Erro desconhecido';
+    let label = 'Erro ao salvar';
+    if (code === '42501' || msg.toLowerCase().includes('row-level security') || msg.toLowerCase().includes('rls')) {
+      label = 'Erro: política RLS';
+    } else if (msg.toLowerCase().includes('jwt') || msg.toLowerCase().includes('unauth')) {
+      label = 'Sessão expirada';
+    } else if (msg.toLowerCase().includes('network') || msg.toLowerCase().includes('failed to fetch')) {
+      label = 'Sem conexão';
+    }
+    updateSyncStatus('error', label);
+    // Toast com erro completo (apenas na primeira ocorrência)
+    if (!window._lastSyncErr || window._lastSyncErr !== msg) {
+      window._lastSyncErr = msg;
+      toast('Erro ao salvar: ' + msg, 'error');
+    }
+    // Tenta de novo em 10s
+    setTimeout(() => { if (pendingSave) syncToCloud(true); }, 10000);
   }
 }
 
@@ -2576,7 +2734,12 @@ function emptyState() {
       txSubcategory: 'all',
       txCard: 'all',
       txType: 'all',
-      txSearch: ''
+      txSearch: '',
+      // Filtros da tela de Categorias
+      catPeriod: 'current',
+      catMonth: 'all',
+      catDateFrom: '',
+      catDateTo: ''
     }
   };
 }
@@ -2777,6 +2940,11 @@ function defaultRules() {
     { id: uid(), pattern: 'icloud', categoryId: 'cat_subscription', subcategory: 'Apps' },
     { id: uid(), pattern: 'apple com bill', categoryId: 'cat_subscription', subcategory: 'Apps' },
     { id: uid(), pattern: 'apple.com', categoryId: 'cat_subscription', subcategory: 'Apps' },
+    { id: uid(), pattern: 'apple', categoryId: 'cat_subscription', subcategory: 'Apps' },
+    { id: uid(), pattern: 'apple services', categoryId: 'cat_subscription', subcategory: 'Apps' },
+    { id: uid(), pattern: 'itunes', categoryId: 'cat_subscription', subcategory: 'Apps' },
+    { id: uid(), pattern: 'app store', categoryId: 'cat_subscription', subcategory: 'Apps' },
+    { id: uid(), pattern: 'appstore', categoryId: 'cat_subscription', subcategory: 'Apps' },
     { id: uid(), pattern: 'google one', categoryId: 'cat_subscription', subcategory: 'Apps' },
     { id: uid(), pattern: 'google storage', categoryId: 'cat_subscription', subcategory: 'Apps' },
     { id: uid(), pattern: 'google play', categoryId: 'cat_subscription', subcategory: 'Apps' },
@@ -2804,6 +2972,8 @@ function defaultRules() {
     { id: uid(), pattern: 'farmacia', categoryId: 'cat_health', subcategory: 'Farmácia' },
     { id: uid(), pattern: 'drogaria', categoryId: 'cat_health', subcategory: 'Farmácia' },
     { id: uid(), pattern: 'drogasil', categoryId: 'cat_health', subcategory: 'Farmácia' },
+    { id: uid(), pattern: 'drogasmil', categoryId: 'cat_health', subcategory: 'Farmácia' },
+    { id: uid(), pattern: 'droga', categoryId: 'cat_health', subcategory: 'Farmácia' },
     { id: uid(), pattern: 'pacheco', categoryId: 'cat_health', subcategory: 'Farmácia' },
     { id: uid(), pattern: 'raia', categoryId: 'cat_health', subcategory: 'Farmácia' },
     { id: uid(), pattern: 'panvel', categoryId: 'cat_health', subcategory: 'Farmácia' },
@@ -3708,7 +3878,7 @@ function renderTransactions() {
               <div class="tx-merchant-name">${t.merchant}</div>
             </div>
           </td>
-          <td><span class="pill"><span class="pill-dot" style="background:${cat.color};"></span>${cat.name}${t.subcategory ? ' · ' + t.subcategory : ''}</span></td>
+          <td><span class="pill cat-pill-clickable" onclick="event.stopPropagation();openCatPicker(event, '${t.id}')"><span class="pill-dot" style="background:${cat.color};"></span>${cat.name}${t.subcategory ? ' · ' + t.subcategory : ''}</span></td>
           <td class="text-soft">${card?.name || '—'}</td>
           <td>${inst}</td>
           <td class="amount negative">R$ ${fmtMoney(t.amount)}</td>
@@ -3978,17 +4148,44 @@ function fmtDateFull(dateStr) {
 }
 
 // ============= TX MODAL =============
+/**
+ * Popula o dropdown de mês de referência com meses úteis: dos últimos 12 meses
+ * até 3 meses no futuro (pra parcelas que ainda vão cair).
+ */
+function populateInvoiceMonthDropdown(selected) {
+  const today = new Date();
+  const list = [];
+  for (let i = -12; i <= 3; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+    const monthStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    list.push(monthStr);
+  }
+  // Adiciona meses que já existem em transações (pode haver meses fora do range)
+  uniqueMonths().forEach(m => { if (!list.includes(m)) list.push(m); });
+  list.sort().reverse();
+  const sel = document.getElementById('txInvoiceMonth');
+  sel.innerHTML = list.map(m => `<option value="${m}" ${m === selected ? 'selected' : ''}>${fmtMonthFull(m)}</option>`).join('');
+}
+
+function toggleInstallmentFields() {
+  const isInst = document.getElementById('txIsInstallment').value === 'yes';
+  document.getElementById('txInstallmentFields').style.display = isInst ? '' : 'none';
+}
+
 function openTxModal() {
   document.getElementById('modalTxTitle').textContent = 'Novo lançamento';
   document.getElementById('txId').value = '';
   document.getElementById('txDate').value = new Date().toISOString().slice(0, 10);
   document.getElementById('txMerchant').value = '';
   document.getElementById('txAmount').value = '';
-  document.getElementById('txInvoiceMonth').value = currentMonth();
+  populateInvoiceMonthDropdown(currentMonth());
+  document.getElementById('txIsInstallment').value = 'no';
   document.getElementById('txInstallment').value = 1;
-  document.getElementById('txTotalInstallments').value = 1;
+  document.getElementById('txTotalInstallments').value = 2;
+  toggleInstallmentFields();
   document.getElementById('txDeleteBtn').style.display = 'none';
   populateTxModalSelects();
+  document.getElementById('txIsInstallment').onchange = toggleInstallmentFields;
   openModal('modalTx');
 }
 
@@ -4000,12 +4197,172 @@ function editTx(id) {
   document.getElementById('txDate').value = tx.date;
   document.getElementById('txMerchant').value = tx.merchant;
   document.getElementById('txAmount').value = tx.amount;
-  document.getElementById('txInvoiceMonth').value = tx.invoiceMonth;
+  populateInvoiceMonthDropdown(tx.invoiceMonth);
+  const isInst = tx.installmentTotal > 1;
+  document.getElementById('txIsInstallment').value = isInst ? 'yes' : 'no';
   document.getElementById('txInstallment').value = tx.installmentCurrent;
-  document.getElementById('txTotalInstallments').value = tx.installmentTotal;
+  document.getElementById('txTotalInstallments').value = tx.installmentTotal > 1 ? tx.installmentTotal : 2;
+  toggleInstallmentFields();
   document.getElementById('txDeleteBtn').style.display = 'inline-flex';
   populateTxModalSelects(tx.cardId, tx.categoryId, tx.subcategory);
+  document.getElementById('txIsInstallment').onchange = toggleInstallmentFields;
   openModal('modalTx');
+}
+
+/**
+ * Popover de mudança rápida de categoria/subcategoria direto na lista.
+ * Quando o usuário muda, dispara learnFromTx pra criar regra automática.
+ */
+let _catPickerEl = null;
+let _catPickerTxId = null;
+let _catPickerLevel = 0;       // 0 = categorias, 1 = subcategorias
+let _catPickerSelectedCat = null;
+
+function openCatPicker(event, txId) {
+  closeCatPicker();
+  _catPickerTxId = txId;
+  _catPickerLevel = 0;
+  _catPickerSelectedCat = null;
+
+  const tx = state.transactions.find(t => t.id === txId);
+  if (!tx) return;
+
+  const popover = document.createElement('div');
+  popover.className = 'cat-popover';
+  _catPickerEl = popover;
+
+  renderCatPicker();
+
+  // Posiciona próximo ao elemento clicado
+  const rect = event.currentTarget.getBoundingClientRect();
+  popover.style.top = (rect.bottom + 6) + 'px';
+  popover.style.left = rect.left + 'px';
+  document.body.appendChild(popover);
+
+  // Ajusta se sair da tela
+  setTimeout(() => {
+    const pRect = popover.getBoundingClientRect();
+    if (pRect.right > window.innerWidth - 12) {
+      popover.style.left = (window.innerWidth - pRect.width - 12) + 'px';
+    }
+    if (pRect.bottom > window.innerHeight - 12) {
+      popover.style.top = (rect.top - pRect.height - 6) + 'px';
+    }
+  }, 0);
+
+  // Fecha ao clicar fora
+  setTimeout(() => {
+    document.addEventListener('click', closeCatPickerOnOutside, { once: false });
+  }, 0);
+}
+
+function renderCatPicker() {
+  if (!_catPickerEl) return;
+  const tx = state.transactions.find(t => t.id === _catPickerTxId);
+  if (!tx) return;
+
+  if (_catPickerLevel === 0) {
+    // Lista de categorias
+    let html = '<div class="cat-popover-header">Categoria</div>';
+    state.categories.forEach(c => {
+      const isActive = c.id === tx.categoryId;
+      const hasSubcategories = (c.subcategories || []).length > 0;
+      html += `
+        <div class="cat-popover-item ${isActive ? 'active' : ''}" data-cat="${c.id}">
+          <span class="pill-dot" style="background:${c.color};"></span>
+          <span class="cat-popover-item-name">${c.name}</span>
+          ${hasSubcategories ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:12px;height:12px;stroke-width:2;color:var(--text-dim);"><polyline points="9 18 15 12 9 6"/></svg>' : ''}
+        </div>
+      `;
+    });
+    _catPickerEl.innerHTML = html;
+    _catPickerEl.querySelectorAll('[data-cat]').forEach(el => {
+      el.onclick = (e) => {
+        e.stopPropagation();
+        const catId = el.dataset.cat;
+        const cat = getCategory(catId);
+        const hasSubs = (cat.subcategories || []).length > 0;
+        if (hasSubs) {
+          _catPickerLevel = 1;
+          _catPickerSelectedCat = catId;
+          renderCatPicker();
+        } else {
+          // Aplica direto
+          applyCatChange(catId, '');
+        }
+      };
+    });
+  } else {
+    // Lista de subcategorias da categoria selecionada
+    const cat = getCategory(_catPickerSelectedCat);
+    let html = `
+      <div class="cat-popover-back" onclick="goBackCatPicker(event)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"/></svg>
+        Voltar
+      </div>
+      <div class="cat-popover-header" style="display:flex;align-items:center;gap:6px;"><span class="pill-dot" style="background:${cat.color};"></span>${cat.name}</div>
+      <div class="cat-popover-item" data-applycat="${cat.id}" data-applysub="">
+        <span class="cat-popover-item-name" style="font-style:italic;color:var(--text-soft);">— Sem subcategoria</span>
+      </div>
+    `;
+    (cat.subcategories || []).forEach(sub => {
+      html += `<div class="cat-popover-item" data-applycat="${cat.id}" data-applysub="${sub}"><span class="cat-popover-item-name">${sub}</span></div>`;
+    });
+    _catPickerEl.innerHTML = html;
+    _catPickerEl.querySelectorAll('[data-applycat]').forEach(el => {
+      el.onclick = (e) => {
+        e.stopPropagation();
+        applyCatChange(el.dataset.applycat, el.dataset.applysub);
+      };
+    });
+  }
+}
+
+function goBackCatPicker(e) {
+  e.stopPropagation();
+  _catPickerLevel = 0;
+  _catPickerSelectedCat = null;
+  renderCatPicker();
+}
+
+function applyCatChange(categoryId, subcategory) {
+  const tx = state.transactions.find(t => t.id === _catPickerTxId);
+  if (!tx) { closeCatPicker(); return; }
+  const oldCat = tx.categoryId;
+  const oldSub = tx.subcategory || '';
+  if (oldCat === categoryId && oldSub === (subcategory || '')) {
+    closeCatPicker();
+    return;
+  }
+  tx.categoryId = categoryId;
+  tx.subcategory = subcategory || '';
+
+  // Aprendizado: cria/atualiza regra para próximas faturas
+  const learnedCount = learnFromTx(tx.merchant, categoryId, subcategory);
+
+  saveState();
+  closeCatPicker();
+  if (learnedCount > 1) {
+    toast(`Categoria atualizada · ${learnedCount} lançamentos similares também atualizados`, 'success');
+  } else {
+    toast('Categoria atualizada', 'success');
+  }
+  renderAll();
+}
+
+function closeCatPicker() {
+  if (_catPickerEl) {
+    _catPickerEl.remove();
+    _catPickerEl = null;
+  }
+  _catPickerTxId = null;
+  document.removeEventListener('click', closeCatPickerOnOutside);
+}
+
+function closeCatPickerOnOutside(e) {
+  if (_catPickerEl && !_catPickerEl.contains(e.target)) {
+    closeCatPicker();
+  }
 }
 
 function populateTxModalSelects(cardId, categoryId, subcategory) {
@@ -4028,6 +4385,14 @@ function saveTx() {
   const amount = parseFloat(document.getElementById('txAmount').value);
   if (!merchant || isNaN(amount) || amount <= 0) { toast('Preencha estabelecimento e valor.', 'error'); return; }
 
+  // Verifica se é parcelado (campo unificado)
+  const isInstallment = document.getElementById('txIsInstallment').value === 'yes';
+  const installmentCurrent = isInstallment ? (parseInt(document.getElementById('txInstallment').value) || 1) : 1;
+  const installmentTotal = isInstallment ? (parseInt(document.getElementById('txTotalInstallments').value) || 1) : 1;
+
+  // Pega valores antigos para comparar (aprendizado)
+  const oldTx = id ? state.transactions.find(t => t.id === id) : null;
+
   const data = {
     date: document.getElementById('txDate').value,
     merchant,
@@ -4036,26 +4401,101 @@ function saveTx() {
     categoryId: document.getElementById('txCategory').value,
     subcategory: document.getElementById('txSubcategory').value,
     invoiceMonth: document.getElementById('txInvoiceMonth').value,
-    installmentCurrent: parseInt(document.getElementById('txInstallment').value) || 1,
-    installmentTotal: parseInt(document.getElementById('txTotalInstallments').value) || 1
+    installmentCurrent,
+    installmentTotal
   };
 
-  if (data.installmentTotal > 1) {
-    data.installmentGroupId = `${merchant}_${amount.toFixed(2)}_${data.installmentTotal}`;
+  if (installmentTotal > 1) {
+    data.installmentGroupId = `${merchant}_${amount.toFixed(2)}_${installmentTotal}`;
   } else {
     data.installmentGroupId = null;
   }
 
   if (id) {
-    const idx = state.transactions.findIndex(t => t.id === id);
-    state.transactions[idx] = { ...state.transactions[idx], ...data };
+    state.transactions[state.transactions.indexOf(oldTx)] = { ...oldTx, ...data };
   } else {
     state.transactions.push({ id: uid(), invoiceId: null, ...data });
   }
+
+  // ===== APRENDIZADO =====
+  // Se a categoria/subcategoria foi mudada manualmente, cria/atualiza regra
+  // pra próximas faturas similares serem classificadas certo automaticamente.
+  const categoryChanged = !oldTx || oldTx.categoryId !== data.categoryId || (oldTx.subcategory || '') !== (data.subcategory || '');
+  if (categoryChanged) {
+    const learnedCount = learnFromTx(merchant, data.categoryId, data.subcategory);
+    if (learnedCount > 0) {
+      toast(`Regra aprendida · ${learnedCount} ${learnedCount === 1 ? 'lançamento similar atualizado' : 'lançamentos similares atualizados'}`, 'success');
+    }
+  }
+
   saveState();
   closeModal('modalTx');
-  toast(id ? 'Lançamento atualizado.' : 'Lançamento adicionado.', 'success');
+  if (!categoryChanged) toast(id ? 'Lançamento atualizado.' : 'Lançamento adicionado.', 'success');
   renderAll();
+}
+
+/**
+ * Sistema de aprendizado: quando usuário categoriza manualmente, extrai um padrão
+ * relevante do nome do estabelecimento, cria/atualiza uma regra automática e
+ * reaplica em todos os outros lançamentos similares.
+ *
+ * Retorna a quantidade de lançamentos similares que foram reclassificados.
+ */
+function learnFromTx(merchant, categoryId, subcategory) {
+  // 1. Extrai o "núcleo" do nome — pega a primeira palavra significativa
+  //    (ignorando prefixos comuns de fatura como PAG, PG, IFD, EBN, TR, PARC, etc)
+  const normalized = normalizeMerchant(merchant);
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  const skipTokens = new Set(['pag', 'pg', 'ifd', 'ebn', 'tr', 'parc', 'parc.', 'compra', 'cpa', 'tx', 'pgto', 'pagto']);
+
+  let pattern = '';
+  for (const t of tokens) {
+    if (skipTokens.has(t)) continue;
+    if (t.length < 3) continue;          // ignora tokens muito curtos
+    if (/^\d+$/.test(t)) continue;       // ignora números
+    pattern = t;
+    break;
+  }
+  if (!pattern) return 0;
+
+  // 2. Verifica se já existe regra com esse padrão
+  const existing = state.rules.find(r => normalizeMerchant(r.pattern) === pattern);
+
+  if (existing) {
+    // Atualiza categoria/subcategoria
+    if (existing.categoryId !== categoryId || (existing.subcategory || '') !== (subcategory || '')) {
+      existing.categoryId = categoryId;
+      existing.subcategory = subcategory || '';
+    }
+  } else {
+    // Cria nova regra
+    state.rules.push({
+      id: uid(),
+      pattern,
+      categoryId,
+      subcategory: subcategory || '',
+      learned: true   // marca como aprendida (vinda de ação manual)
+    });
+  }
+
+  // 3. Reaplica em todos os lançamentos que casam com esse padrão E que ainda
+  //    não estão com essa categoria/subcategoria. Não mexe em lançamentos
+  //    que o usuário possa ter customizado pra outra categoria diferente.
+  let reclassified = 0;
+  state.transactions.forEach(t => {
+    const txNorm = normalizeMerchant(t.merchant);
+    const txTokens = txNorm.split(/\s+/);
+    if (!txTokens.includes(pattern) && !txNorm.includes(pattern)) return;
+    if (t.categoryId === categoryId && (t.subcategory || '') === (subcategory || '')) return;
+    // Só reclassifica se o lançamento estava em categoria default conhecida
+    // (pra evitar pisar em customizações que o usuário fez pra outra cat)
+    const safeToOverride = ['cat_other', 'cat_food', 'cat_market', 'cat_banca', 'cat_transport', 'cat_subscription', 'cat_health', 'cat_shopping', 'cat_leisure', 'cat_education'];
+    if (!safeToOverride.includes(t.categoryId)) return;
+    t.categoryId = categoryId;
+    t.subcategory = subcategory || '';
+    reclassified++;
+  });
+  return reclassified;
 }
 
 function deleteTx() {
@@ -4241,23 +4681,106 @@ function deleteInvoice(id) {
 }
 
 // ============= CATEGORIES PAGE =============
+/**
+ * Resolve o range de filtro da tela de Categorias (similar ao computePeriodRange dos lançamentos).
+ */
+function computeCatPeriodRange() {
+  const f = state.filters;
+  const period = f.catPeriod || 'current';
+  if (period === 'all') return null;
+  if (period === 'current') return { type: 'month', month: currentMonth(), label: fmtMonthFull(currentMonth()) };
+  if (period === 'previous') {
+    const prev = addMonths(currentMonth(), -1);
+    return { type: 'month', month: prev, label: fmtMonthFull(prev) };
+  }
+  if (period === 'month' && f.catMonth && f.catMonth !== 'all') {
+    return { type: 'month', month: f.catMonth, label: fmtMonthFull(f.catMonth) };
+  }
+  if (period === 'custom' && f.catDateFrom && f.catDateTo) {
+    const from = f.catDateFrom <= f.catDateTo ? f.catDateFrom : f.catDateTo;
+    const to = f.catDateFrom <= f.catDateTo ? f.catDateTo : f.catDateFrom;
+    return { type: 'date', from, to, label: fmtDateFull(from) + ' até ' + fmtDateFull(to) };
+  }
+  return null;
+}
+
+function getCatPageFilteredTxs() {
+  const range = computeCatPeriodRange();
+  if (!range) return state.transactions;
+  if (range.type === 'month') return state.transactions.filter(t => t.invoiceMonth === range.month);
+  if (range.type === 'date') return state.transactions.filter(t => t.date >= range.from && t.date <= range.to);
+  return state.transactions;
+}
+
+function onCatPeriodChange(value) {
+  state.filters.catPeriod = value;
+  if (value === 'custom') {
+    if (!state.filters.catDateFrom || !state.filters.catDateTo) {
+      const today = new Date();
+      const past = new Date();
+      past.setDate(today.getDate() - 30);
+      state.filters.catDateFrom = past.toISOString().slice(0, 10);
+      state.filters.catDateTo = today.toISOString().slice(0, 10);
+    }
+  } else if (value === 'month') {
+    if (!state.filters.catMonth || state.filters.catMonth === 'all') {
+      const months = uniqueMonths();
+      state.filters.catMonth = months[0] || currentMonth();
+    }
+  }
+  saveState();
+  renderCategoriesPage();
+}
+
 function renderCategoriesPage() {
-  const month = state.filters.dashMonth || currentMonth();
-  const monthTxs = state.transactions.filter(t => t.invoiceMonth === month);
-  const total = monthTxs.reduce((s, t) => s + t.amount, 0);
+  const f = state.filters;
+
+  // ===== Filtros: popular controles =====
+  document.getElementById('catPeriodFilter').value = f.catPeriod || 'current';
+
+  const monthEl = document.getElementById('catMonthFilter');
+  const months = uniqueMonths();
+  monthEl.innerHTML = '<option value="all">Selecione um mês...</option>' +
+    months.map(m => `<option value="${m}" ${f.catMonth === m ? 'selected' : ''}>${fmtMonthFull(m)}</option>`).join('');
+  monthEl.style.display = f.catPeriod === 'month' ? '' : 'none';
+
+  const dateRangeEl = document.getElementById('catDateRange');
+  dateRangeEl.style.display = f.catPeriod === 'custom' ? 'flex' : 'none';
+  if (f.catDateFrom) document.getElementById('catDateFrom').value = f.catDateFrom;
+  if (f.catDateTo) document.getElementById('catDateTo').value = f.catDateTo;
+
+  // Bind
+  document.getElementById('catPeriodFilter').onchange = e => onCatPeriodChange(e.target.value);
+  document.getElementById('catMonthFilter').onchange = e => { state.filters.catMonth = e.target.value; saveState(); renderCategoriesPage(); };
+  document.getElementById('catDateFrom').onchange = e => { state.filters.catDateFrom = e.target.value; saveState(); renderCategoriesPage(); };
+  document.getElementById('catDateTo').onchange = e => { state.filters.catDateTo = e.target.value; saveState(); renderCategoriesPage(); };
+
+  // ===== Dados filtrados =====
+  const filteredTxs = getCatPageFilteredTxs();
+  const range = computeCatPeriodRange();
+
+  // Subtitle
+  const sub = document.getElementById('catPageSubtitle');
+  if (range) {
+    sub.textContent = `${range.label} · ${filteredTxs.length} ${filteredTxs.length === 1 ? 'lançamento' : 'lançamentos'}`;
+  } else {
+    sub.textContent = `Todo o período · ${filteredTxs.length} lançamentos`;
+  }
+
+  const total = filteredTxs.reduce((s, t) => s + t.amount, 0);
   const byCat = {};
-  monthTxs.forEach(t => { byCat[t.categoryId] = (byCat[t.categoryId] || 0) + t.amount; });
+  filteredTxs.forEach(t => { byCat[t.categoryId] = (byCat[t.categoryId] || 0) + t.amount; });
   const entries = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
 
   // Lista detalhada
   const list = document.getElementById('categoriesPageList');
   if (entries.length === 0) {
-    list.innerHTML = '<div class="empty-subtitle" style="text-align:center;padding:30px;">Sem dados no mês atual</div>';
+    list.innerHTML = '<div class="empty-subtitle" style="text-align:center;padding:30px;">Sem dados no período selecionado</div>';
   } else {
     list.innerHTML = entries.map(([id, val]) => {
       const cat = getCategory(id);
       const pct = total > 0 ? (val / total) * 100 : 0;
-      const count = monthTxs.filter(t => t.categoryId === id).length;
+      const count = filteredTxs.filter(t => t.categoryId === id).length;
       return `
         <div class="cat-item">
           <div class="cat-icon" style="background:${cat.color}20;color:${cat.color};">
@@ -4303,11 +4826,11 @@ function renderCategoriesPage() {
     });
   }
 
-  // Comparativo mensal stacked
-  const months = uniqueMonths().slice(0, 6).reverse();
+  // Comparativo mensal stacked - sempre mostra os últimos 6 meses
+  const allMonths = uniqueMonths().slice(0, 6).reverse();
   const datasets = state.categories.map(cat => ({
     label: cat.name,
-    data: months.map(m => state.transactions.filter(t => t.invoiceMonth === m && t.categoryId === cat.id).reduce((s, t) => s + t.amount, 0)),
+    data: allMonths.map(m => state.transactions.filter(t => t.invoiceMonth === m && t.categoryId === cat.id).reduce((s, t) => s + t.amount, 0)),
     backgroundColor: cat.color,
     borderRadius: 4
   })).filter(d => d.data.some(v => v > 0));
@@ -4315,7 +4838,7 @@ function renderCategoriesPage() {
   if (charts.catsMonthly) charts.catsMonthly.destroy();
   charts.catsMonthly = new Chart(ctx2, {
     type: 'bar',
-    data: { labels: months.map(fmtMonth), datasets },
+    data: { labels: allMonths.map(fmtMonth), datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
