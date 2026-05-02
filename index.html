@@ -2,7 +2,11 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fintrack">
 <title>Fintrack — Gestão de Faturas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1119,11 +1123,6 @@ html, body {
 .mb-5 { margin-bottom: 20px; }
 .text-sm { font-size: 12px; }
 
-@media (max-width: 1024px) {
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .grid-2, .grid-3 { grid-template-columns: 1fr; }
-}
-
 /* ============= LOGIN SCREEN ============= */
 .login-screen {
   position: fixed;
@@ -1320,10 +1319,551 @@ html, body {
 .sync-logout:hover { background: var(--bg-card); color: var(--text); }
 .sync-logout svg { width: 13px; height: 13px; stroke-width: 2; }
 
+/* ============= MOBILE TOPBAR & BOTTOM NAV (hidden on desktop) ============= */
+.mobile-topbar { display: none; }
+.bottom-nav { display: none; }
+.sidebar-overlay { display: none; }
+
+/* ============= TABLET ============= */
+@media (max-width: 1024px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .main { padding: 24px 28px; }
+}
+
+/* ============= MOBILE ============= */
 @media (max-width: 768px) {
-  .app { grid-template-columns: 1fr; }
-  .sidebar { position: static; height: auto; }
-  .main { padding: 20px; }
+  /* Layout base */
+  .app {
+    grid-template-columns: 1fr;
+    min-height: 100vh;
+  }
+
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Inputs precisam ter font-size >= 16px no iOS pra não dar zoom */
+  .input, .select, .textarea {
+    font-size: 16px;
+    padding: 11px 14px;
+  }
+
+  /* ===== MOBILE TOPBAR ===== */
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: max(env(safe-area-inset-top), 8px) 16px 10px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border-soft);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    backdrop-filter: blur(12px);
+    background: rgba(10, 10, 10, 0.85);
+  }
+
+  .mobile-menu-btn, .mobile-action-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .mobile-menu-btn svg, .mobile-action-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2;
+  }
+
+  .mobile-action-btn {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+
+  .mobile-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    font-weight: 600;
+    font-size: 15px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ===== SIDEBAR (mobile drawer) ===== */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    height: 100vh;
+    background: var(--bg-soft);
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    padding: max(env(safe-area-inset-top), 20px) 16px env(safe-area-inset-bottom) 16px;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.4);
+  }
+
+  .sidebar.open { transform: translateX(0); }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .sidebar-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* ===== MAIN ===== */
+  .main {
+    padding: 20px 16px 90px;     /* 90px de bottom = bottom-nav (~70px) + buffer */
+    max-width: 100%;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+  }
+
+  .page-title { font-size: 22px; }
+
+  .page-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .page-actions .select,
+  .page-actions .btn {
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+  }
+
+  /* Esconde botão "Nova Fatura" do header (já tem no FAB e bottom-nav adiciona) */
+  .page-actions .btn:not(.btn-ghost):not(.btn-secondary):not(.btn-danger) {
+    flex: 1 1 100%;
+  }
+
+  /* ===== STATS GRID ===== */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card { padding: 14px; }
+  .stat-label { font-size: 9.5px; margin-bottom: 8px; }
+  .stat-label svg { display: none; }      /* economiza espaço */
+  .stat-value { font-size: 19px; }
+  .stat-value .currency { font-size: 11px; }
+  .stat-trend { font-size: 10.5px; }
+
+  /* ===== CARDS / GRIDS ===== */
+  .card { padding: 16px; border-radius: 12px; }
+  .card-title { font-size: 14px; }
+  .card-subtitle { font-size: 11px; }
+
+  .grid-2, .grid-3 {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  /* ===== TABELAS COMO CARDS ===== */
+  /* Em mobile, ocultamos a thead e cada <tr> vira um card */
+  .table-wrap { overflow-x: visible; }
+
+  .table { display: block; }
+  .table thead { display: none; }
+  .table tbody { display: block; }
+
+  .table tr {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px 12px;
+    padding: 12px 14px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+
+  .table tr:hover td { background: transparent; }
+
+  .table td {
+    display: contents;       /* deixa os filhos do <td> usarem o grid do <tr> */
+    border: none;
+    padding: 0;
+  }
+
+  /* Por padrão, não mostra labels antes do conteúdo */
+  /* Personalizamos linhas em containers específicos abaixo */
+
+  /* ===== TABELA DE LANÇAMENTOS (e outras com merchant + categoria + valor) ===== */
+  /* Estrutura: data | (estabelecimento + categoria) | valor */
+  #txBody tr {
+    grid-template-columns: 1fr auto;
+    gap: 4px 0;
+    padding: 14px;
+  }
+  #txBody td:nth-child(1) { /* data */
+    grid-column: 1; grid-row: 1;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  #txBody td:nth-child(2) { /* merchant */
+    grid-column: 1; grid-row: 2;
+    overflow: hidden;
+  }
+  #txBody td:nth-child(2) .tx-merchant-name {
+    max-width: none;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  #txBody td:nth-child(3) { /* categoria */
+    grid-column: 1; grid-row: 3;
+  }
+  #txBody td:nth-child(3) .pill {
+    font-size: 11px;
+  }
+  #txBody td:nth-child(4) { /* cartão */
+    grid-column: 1; grid-row: 4;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  #txBody td:nth-child(5) { /* parcela */
+    grid-column: 2; grid-row: 1 / span 2;
+    align-self: start;
+    text-align: right;
+  }
+  #txBody td:nth-child(6) { /* valor */
+    grid-column: 2; grid-row: 3 / span 2;
+    align-self: end;
+    text-align: right;
+    font-size: 15px;
+  }
+  #txBody td:nth-child(7) { /* botão editar */
+    display: none;           /* a célula toda já é clicável */
+  }
+
+  /* ===== TABELA DE FATURAS ===== */
+  #invoicesBody tr {
+    grid-template-columns: 1fr auto;
+    gap: 4px 8px;
+  }
+  #invoicesBody td:nth-child(1) { grid-column: 1; grid-row: 1; font-weight: 600; font-size: 14px; }
+  #invoicesBody td:nth-child(2) { grid-column: 1; grid-row: 2; font-size: 12px; color: var(--text-soft); }
+  #invoicesBody td:nth-child(3) { grid-column: 2; grid-row: 1; font-size: 11px; text-align: right; }
+  #invoicesBody td:nth-child(4) { grid-column: 1; grid-row: 3; font-size: 11px; color: var(--text-dim); }
+  #invoicesBody td:nth-child(5) { grid-column: 2; grid-row: 2 / span 2; align-self: end; text-align: right; font-size: 14px; }
+  #invoicesBody td:nth-child(6) { grid-column: 2; grid-row: 1; }
+  #invoicesBody td:nth-child(6) .btn-icon { width: 28px; height: 28px; }
+
+  /* ===== TABELAS DE PARCELAS ===== */
+  #installBody1 tr, #installBody2 tr, #installBody3 tr, #installBody6 tr {
+    grid-template-columns: 1fr auto;
+  }
+  #installBody1 td:nth-child(1), #installBody2 td:nth-child(1),
+  #installBody3 td:nth-child(1), #installBody6 td:nth-child(1) {
+    grid-column: 1; grid-row: 1; font-weight: 600; font-size: 14px;
+  }
+  #installBody1 td:nth-child(2), #installBody2 td:nth-child(2),
+  #installBody3 td:nth-child(2), #installBody6 td:nth-child(2) {
+    grid-column: 1; grid-row: 2;
+  }
+  #installBody1 td:nth-child(3), #installBody2 td:nth-child(3),
+  #installBody3 td:nth-child(3), #installBody6 td:nth-child(3) {
+    grid-column: 1; grid-row: 3; font-size: 11px; color: var(--text-dim);
+  }
+  #installBody1 td:nth-child(4), #installBody2 td:nth-child(4),
+  #installBody3 td:nth-child(4), #installBody6 td:nth-child(4) {
+    grid-column: 2; grid-row: 1; align-self: start;
+  }
+  #installBody1 td:nth-child(5), #installBody2 td:nth-child(5),
+  #installBody3 td:nth-child(5), #installBody6 td:nth-child(5) {
+    grid-column: 2; grid-row: 2;
+    text-align: right; font-size: 13px;
+  }
+  #installBody1 td:nth-child(6), #installBody2 td:nth-child(6),
+  #installBody3 td:nth-child(6), #installBody6 td:nth-child(6) {
+    grid-column: 2; grid-row: 3;
+    text-align: right; font-weight: 600;
+  }
+
+  /* ===== TABELA DE ALERTAS ===== */
+  #alertsBody tr {
+    grid-template-columns: 1fr auto;
+  }
+  #alertsBody td:nth-child(1) { grid-column: 1; grid-row: 1; }
+  #alertsBody td:nth-child(2) { grid-column: 2; grid-row: 1; text-align: right; font-size: 12px; }
+  #alertsBody td:nth-child(3) { grid-column: 2; grid-row: 2; text-align: right; font-size: 13px; font-weight: 600; }
+  #alertsBody td:nth-child(4) { grid-column: 1 / -1; grid-row: 3; }
+  #alertsBody td:nth-child(5) { display: none; }
+
+  /* ===== TABELA DE CARTÕES ===== */
+  #cardsBody tr { grid-template-columns: 1fr auto; }
+  #cardsBody td:nth-child(1) { grid-column: 1; grid-row: 1; font-weight: 600; }
+  #cardsBody td:nth-child(2) { grid-column: 1; grid-row: 2; font-size: 11px; color: var(--text-dim); }
+  #cardsBody td:nth-child(3) { grid-column: 2; grid-row: 1; font-size: 11px; }
+  #cardsBody td:nth-child(4) { grid-column: 2; grid-row: 2; font-size: 11px; color: var(--text-dim); }
+  #cardsBody td:nth-child(5) { grid-column: 1; grid-row: 3; font-size: 11px; color: var(--text-dim); }
+  #cardsBody td:nth-child(6) { grid-column: 2; grid-row: 3; font-weight: 600; text-align: right; }
+  #cardsBody td:nth-child(7) { display: none; }
+
+  /* ===== SETTINGS TABLES (categorias e regras) ===== */
+  #settingsCatBody tr, #rulesBody tr {
+    grid-template-columns: 1fr auto;
+    gap: 4px 8px;
+  }
+  #settingsCatBody td:nth-child(1), #rulesBody td:nth-child(1) {
+    grid-column: 1; grid-row: 1;
+  }
+  #settingsCatBody td:nth-child(2), #rulesBody td:nth-child(2) {
+    grid-column: 1; grid-row: 2; font-size: 12px; color: var(--text-soft);
+  }
+  #settingsCatBody td:nth-child(3), #rulesBody td:nth-child(3) {
+    grid-column: 2; grid-row: 1; font-size: 11px;
+  }
+  #settingsCatBody td:nth-child(4), #rulesBody td:nth-child(4) {
+    grid-column: 2; grid-row: 2; font-weight: 600; text-align: right;
+  }
+  #settingsCatBody td:nth-child(5), #rulesBody td:nth-child(5) {
+    display: none;
+  }
+
+  /* ===== RECENT TX (DASHBOARD) ===== */
+  #recentTxBody tr { grid-template-columns: 1fr auto; gap: 4px 8px; }
+  #recentTxBody td:nth-child(1) { grid-column: 1; grid-row: 1 / span 2; }
+  #recentTxBody td:nth-child(2) { display: none; }    /* parcela inline */
+  #recentTxBody td:nth-child(3) { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 14px; }
+
+  /* ===== FILTERS ===== */
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .filter-bar .input,
+  .filter-bar .select,
+  .filter-bar .search-input {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+  .date-range {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: nowrap;
+  }
+  .date-range .input { flex: 1; width: 0; }
+
+  /* ===== TX SUMMARY ===== */
+  .tx-summary {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 14px;
+  }
+  .tx-summary-right {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-soft);
+    justify-content: space-between;
+  }
+  .tx-summary-value { font-size: 16px; }
+
+  /* ===== INSTALLMENT SECTION HEADERS ===== */
+  .install-section { margin-bottom: 20px; }
+  .install-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .install-header-left { flex-wrap: wrap; }
+  .install-total { font-size: 13px; }
+
+  /* ===== MODAIS — slide-up fullscreen ===== */
+  .modal-overlay { padding: 0; }
+
+  .modal {
+    max-width: 100%;
+    max-height: 100vh;
+    height: 100vh;
+    border-radius: 0;
+    border: none;
+    animation: slideUp 0.25s ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .modal-header {
+    padding: max(env(safe-area-inset-top), 12px) 16px 12px;
+    position: sticky;
+    top: 0;
+    background: var(--bg-card);
+    z-index: 5;
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  .modal-footer {
+    padding: 12px 16px max(env(safe-area-inset-bottom), 12px);
+    position: sticky;
+    bottom: 0;
+    background: var(--bg-card);
+    flex-wrap: wrap;
+  }
+
+  .modal-footer .btn {
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+  }
+
+  .modal-footer .btn-danger {
+    flex: 1 1 100%;
+    margin-right: 0;
+    margin-bottom: 8px;
+    order: 3;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* ===== UPLOAD ZONE ===== */
+  .upload-zone { padding: 32px 16px; }
+  .upload-icon { width: 40px; height: 40px; }
+  .upload-icon svg { width: 18px; height: 18px; }
+  .upload-title { font-size: 14px; }
+  .upload-subtitle { font-size: 11.5px; }
+
+  /* ===== TABS ===== */
+  .tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    margin: 0 -16px 16px;
+    padding: 0 16px;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { white-space: nowrap; }
+
+  /* ===== ALERTS ===== */
+  .alert { padding: 12px 14px; }
+  .alert-title { font-size: 12.5px; }
+  .alert-text { font-size: 11.5px; }
+
+  /* ===== CHARTS (altura adaptativa) ===== */
+  .chart-wrap { height: 240px; }
+  .chart-wrap.tall { height: 280px; }
+
+  /* ===== CAT LIST ===== */
+  .cat-amount { font-size: 12px; }
+  .cat-pct { font-size: 10px; }
+
+  /* ===== BOTTOM NAV ===== */
+  .bottom-nav {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(17, 17, 17, 0.92);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border-soft);
+    z-index: 40;
+    padding: 6px 4px max(env(safe-area-inset-bottom), 6px);
+  }
+
+  .bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 8px 4px;
+    cursor: pointer;
+    color: var(--text-dim);
+    font-size: 10px;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: color 0.12s, background 0.12s;
+    user-select: none;
+  }
+
+  .bottom-nav-item.active { color: var(--text); }
+  .bottom-nav-item:active { background: var(--bg-elevated); }
+
+  .bottom-nav-item svg {
+    width: 22px;
+    height: 22px;
+    stroke-width: 2;
+  }
+
+  /* ===== TOAST ===== */
+  .toast-container {
+    bottom: calc(80px + env(safe-area-inset-bottom));
+    right: 12px;
+    left: 12px;
+  }
+  .toast { min-width: 0; width: 100%; }
+
+  /* ===== SYNC STATUS (mobile - na sidebar drawer) ===== */
+  .sync-status { padding-top: 20px; }
+
+  /* ===== POPOVER DE CATEGORIA ===== */
+  .cat-popover {
+    /* Em mobile, vira um modal centralizado em vez de popover */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(100vw - 32px);
+    max-width: 360px;
+    max-height: 70vh;
+  }
+
+  /* ===== MODAL DE UPLOAD ===== */
+  #uploadPreview {
+    max-height: calc(100vh - 360px) !important;
+  }
+}
+
+/* ============= MICRO MOBILE ============= */
+@media (max-width: 380px) {
+  .stat-value { font-size: 17px; }
+  .bottom-nav-item span { font-size: 9px; }
+  .page-title { font-size: 20px; }
 }
 </style>
 </head>
@@ -1369,6 +1909,24 @@ html, body {
 </div>
 
 <div class="app" id="appContainer" style="display:none;">
+
+  <!-- ============ MOBILE TOPBAR ============ -->
+  <header class="mobile-topbar">
+    <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="mobile-brand">
+      <div class="brand-mark" style="width:24px;height:24px;font-size:12px;border-radius:6px;">F</div>
+      <span id="mobileTitle">Dashboard</span>
+    </div>
+    <button class="mobile-action-btn" id="mobileActionBtn" onclick="mobileActionClick()" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+  </header>
+
+  <!-- ============ MOBILE SIDEBAR OVERLAY ============ -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+
   <!-- ============ SIDEBAR ============ -->
   <aside class="sidebar">
     <div class="brand">
@@ -2073,6 +2631,26 @@ html, body {
     </div>
 
   </main>
+
+  <!-- ============ MOBILE BOTTOM NAV ============ -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span>Início</span>
+    </div>
+    <div class="bottom-nav-item" data-page="transactions" onclick="navigateTo('transactions')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 7H3"/><path d="M17 3l4 4-4 4"/><path d="M3 17h18"/><path d="M7 21l-4-4 4-4"/></svg>
+      <span>Lançamentos</span>
+    </div>
+    <div class="bottom-nav-item" data-page="installments" onclick="navigateTo('installments')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>Parcelas</span>
+    </div>
+    <div class="bottom-nav-item" data-page="categories" onclick="navigateTo('categories')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3h7v7H3z"/><path d="M14 3h7v7h-7z"/><path d="M14 14h7v7h-7z"/><path d="M3 14h7v7H3z"/></svg>
+      <span>Categorias</span>
+    </div>
+  </nav>
 </div>
 
 <!-- ============ MODALS ============ -->
@@ -3525,12 +4103,46 @@ function confirmInvoiceImport() {
 }
 
 // ============= NAVIGATION =============
+// Mapeamento de página para título mobile e ação principal (FAB)
+const PAGE_META = {
+  dashboard:    { title: 'Dashboard',    action: 'invoice' },
+  transactions: { title: 'Lançamentos',  action: 'newtx' },
+  installments: { title: 'Parcelas',     action: null },
+  categories:   { title: 'Categorias',   action: null },
+  invoices:     { title: 'Faturas',      action: 'invoice' },
+  alerts:       { title: 'Alertas',      action: 'newalert' },
+  cards:        { title: 'Cartões',      action: 'newcard' },
+  settings:     { title: 'Configurações',action: null }
+};
+
 function navigateTo(page) {
+  // Sidebar items
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
+  // Bottom nav items
+  document.querySelectorAll('.bottom-nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.bottom-nav-item[data-page="${page}"]`)?.classList.add('active');
+  // Pages
   document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
   document.getElementById('page-' + page)?.classList.add('active');
-  // Re-render specific page if needed
+
+  // Mobile: atualiza título e botão de ação no topbar
+  const meta = PAGE_META[page] || { title: 'Fintrack', action: null };
+  const titleEl = document.getElementById('mobileTitle');
+  if (titleEl) titleEl.textContent = meta.title;
+  const actionBtn = document.getElementById('mobileActionBtn');
+  if (actionBtn) {
+    actionBtn.style.display = meta.action ? '' : 'none';
+    actionBtn.dataset.action = meta.action || '';
+  }
+
+  // Fecha o drawer mobile se estiver aberto
+  closeMobileSidebar();
+
+  // Scroll pra cima ao trocar de página
+  window.scrollTo({ top: 0, behavior: 'instant' });
+
+  // Re-render
   if (page === 'dashboard') renderDashboard();
   if (page === 'transactions') renderTransactions();
   if (page === 'installments') renderInstallments();
@@ -3539,6 +4151,36 @@ function navigateTo(page) {
   if (page === 'alerts') renderAlerts();
   if (page === 'cards') renderCards();
   if (page === 'settings') renderSettings();
+}
+
+// ============= MOBILE SIDEBAR =============
+function toggleMobileSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  if (!sidebar.classList.contains('open')) {
+    sidebar.classList.add('open');
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  } else {
+    closeMobileSidebar();
+  }
+}
+
+function closeMobileSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// Botão de ação mobile (FAB no topo)
+function mobileActionClick() {
+  const action = document.getElementById('mobileActionBtn').dataset.action;
+  if (action === 'invoice') openInvoiceUpload();
+  else if (action === 'newtx') openTxModal();
+  else if (action === 'newcard') openCardModal();
+  else if (action === 'newalert') openAlertModal();
 }
 
 document.querySelectorAll('.nav-item').forEach(el => {
@@ -4227,33 +4869,48 @@ function openCatPicker(event, txId) {
   const tx = state.transactions.find(t => t.id === txId);
   if (!tx) return;
 
+  const isMobile = window.innerWidth <= 768;
+
+  // Em mobile, mostra um overlay escurecido por trás
+  if (isMobile) {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'cat-popover-backdrop';
+    backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:199;';
+    backdrop.id = '_catPickerBackdrop';
+    backdrop.onclick = closeCatPicker;
+    document.body.appendChild(backdrop);
+  }
+
   const popover = document.createElement('div');
   popover.className = 'cat-popover';
   _catPickerEl = popover;
 
   renderCatPicker();
-
-  // Posiciona próximo ao elemento clicado
-  const rect = event.currentTarget.getBoundingClientRect();
-  popover.style.top = (rect.bottom + 6) + 'px';
-  popover.style.left = rect.left + 'px';
   document.body.appendChild(popover);
 
-  // Ajusta se sair da tela
-  setTimeout(() => {
-    const pRect = popover.getBoundingClientRect();
-    if (pRect.right > window.innerWidth - 12) {
-      popover.style.left = (window.innerWidth - pRect.width - 12) + 'px';
-    }
-    if (pRect.bottom > window.innerHeight - 12) {
-      popover.style.top = (rect.top - pRect.height - 6) + 'px';
-    }
-  }, 0);
+  // Posicionamento: em mobile, o CSS já centraliza via position:fixed + transform.
+  // Em desktop, posiciona próximo ao elemento clicado.
+  if (!isMobile) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    popover.style.top = (rect.bottom + 6) + 'px';
+    popover.style.left = rect.left + 'px';
 
-  // Fecha ao clicar fora
-  setTimeout(() => {
-    document.addEventListener('click', closeCatPickerOnOutside, { once: false });
-  }, 0);
+    // Ajusta se sair da tela
+    setTimeout(() => {
+      const pRect = popover.getBoundingClientRect();
+      if (pRect.right > window.innerWidth - 12) {
+        popover.style.left = (window.innerWidth - pRect.width - 12) + 'px';
+      }
+      if (pRect.bottom > window.innerHeight - 12) {
+        popover.style.top = (rect.top - pRect.height - 6) + 'px';
+      }
+    }, 0);
+
+    // Fecha ao clicar fora (só desktop — mobile usa backdrop)
+    setTimeout(() => {
+      document.addEventListener('click', closeCatPickerOnOutside, { once: false });
+    }, 0);
+  }
 }
 
 function renderCatPicker() {
@@ -4355,6 +5012,8 @@ function closeCatPicker() {
     _catPickerEl.remove();
     _catPickerEl = null;
   }
+  const backdrop = document.getElementById('_catPickerBackdrop');
+  if (backdrop) backdrop.remove();
   _catPickerTxId = null;
   document.removeEventListener('click', closeCatPickerOnOutside);
 }
@@ -5490,6 +6149,13 @@ function initApp() {
 
   setupUploadZone();
   renderAll();
+
+  // Inicializa título e ação mobile pra dashboard
+  const meta = PAGE_META.dashboard;
+  document.getElementById('mobileTitle').textContent = meta.title;
+  const actionBtn = document.getElementById('mobileActionBtn');
+  actionBtn.style.display = meta.action ? '' : 'none';
+  actionBtn.dataset.action = meta.action || '';
 }
 
 /**
